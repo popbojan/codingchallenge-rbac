@@ -3,6 +3,7 @@ package com.globalside.codingchallenge.rbac.config;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -19,14 +20,27 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableConfigurationProperties(SecurityUserProperties.class)
 public class SecurityConfig {
 
+    public static final String ROLE_ADMIN = "ADMIN";
+    public static final String ROLE_USER = "USER";
+
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http,
+            CustomAccessDeniedHandler accessDeniedHandler) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/products", "/products/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/products", "/products/**")
+                            .hasAnyRole(ROLE_ADMIN, ROLE_USER)
+                        .requestMatchers(HttpMethod.POST, "/products")
+                            .hasRole(ROLE_ADMIN)
+                        .requestMatchers(HttpMethod.PUT, "/products/**")
+                            .hasRole(ROLE_ADMIN)
+                        .requestMatchers(HttpMethod.DELETE, "/products/**")
+                            .hasRole(ROLE_ADMIN)
                         .anyRequest().denyAll()
                 )
+                .exceptionHandling(ex -> ex.accessDeniedHandler(accessDeniedHandler))
                 .httpBasic(Customizer.withDefaults());
 
         return http.build();
