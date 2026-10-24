@@ -50,6 +50,7 @@ public class SecurityConfig {
     public UserDetailsService userDetailsService(
             PasswordEncoder passwordEncoder,
             SecurityUserProperties securityUserProperties) {
+        // Plain-text passwords from env vars (application.properties) are hashed here before being stored in memory.
         UserDetails[] users = securityUserProperties.users().stream()
                 .map(user -> User.builder()
                         .username(user.username())
